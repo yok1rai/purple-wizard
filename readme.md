@@ -46,7 +46,7 @@ git clone https://github.com/yok1rai/purple-wizard.git
 3. go to the target directory
 
 ```bash
-cd purple_wizard
+cd purple-wizard
 ```
 
 4. give execute permission to `./install`
