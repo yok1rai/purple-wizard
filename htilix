@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+
+# ===== Colors =====
+BOLD="\033[1m"
+RESET="\033[0m"
+
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+MAGENTA="\033[35m"
+GRAY="\033[90m"
+
+
+CONTENT="
+${BOLD}${CYAN}
+====================================
+        TILIX SHORTCUTS HELP
+====================================
+${RESET}
+
+${BOLD}${MAGENTA}APPLICATIONS${RESET}
+------------
+${GREEN}SHIFT + CTRL + N${RESET}    Open a new window
+${GREEN}SHIFT + CTRL + P${RESET}    Open preferences
+${GRAY}(disabled)${RESET}          Show keyboard shortcuts
+
+
+${BOLD}${MAGENTA}NAUTILUS${RESET}
+--------
+${GREEN}CTRL + ALT + T${RESET}      Open in Tilix
+
+
+${BOLD}${MAGENTA}SESSION${RESET}
+-------
+${GREEN}CTRL + SHIFT + T${RESET}        Open a new session
+${GREEN}CTRL + SHIFT + Q${RESET}        Close the current session
+${GRAY}(disabled)${RESET}              Edit the session name
+${GREEN}CTRL + SHIFT + S${RESET}        Save the current session
+${GRAY}(disabled)${RESET}              Save session with new filename
+${GREEN}CTRL + SHIFT + O${RESET}        Open a saved session
+${GREEN}CTRL + PAGE-DOWN${RESET}        Switch to next session
+${GREEN}CTRL + PAGE-UP${RESET}          Switch to previous session
+${GREEN}CTRL + ALT + [0-9]${RESET}      Switch to session X
+${GREEN}F12${RESET}                     View session sidebar
+${GREEN}SHIFT + CTRL + PAGE-DOWN${RESET} Reorder to next session
+${GREEN}SHIFT + CTRL + PAGE-UP${RESET}   Reorder to previous session
+
+
+${BOLD}${MAGENTA}TERMINAL${RESET}
+--------
+${GREEN}CTRL + ALT + A${RESET}      Add terminal automatically
+${GREEN}CTRL + ALT + D${RESET}      Add terminal down
+${GREEN}CTRL + ALT + R${RESET}      Add terminal right
+
+${YELLOW}SHIFT + ALT + UP${RESET}    Resize terminal up
+${YELLOW}SHIFT + ALT + DOWN${RESET}  Resize terminal down
+${YELLOW}SHIFT + ALT + LEFT${RESET}  Resize terminal left
+${YELLOW}SHIFT + ALT + RIGHT${RESET} Resize terminal right
+
+${GREEN}SHIFT + CTRL + W${RESET}    Close terminal
+${GREEN}SHIFT + CTRL + X${RESET}    Maximize terminal
+
+${GREEN}CTRL + TAB${RESET}          Switch to next terminal
+${GREEN}CTRL + SHIFT + TAB${RESET}  Switch to previous terminal
+${GREEN}ALT + [0-9]${RESET}         Switch to terminal X
+
+${GREEN}xCTRL + ALT + S${RESET}      Synchronize input between terminals
+
+${GRAY}(disabled)${RESET}          Reset terminal
+${GRAY}(disabled)${RESET}          Reset and clear terminal
+${GRAY}(disabled)${RESET}          Save terminal contents
+
+${CYAN}====================================${RESET}
+"
+
+# ===== Pager handling =====
+_CAT=0
+_LESS=0
+_ESC=0
+_HELP=0
+
+# Default to less if no flags are provided
+if [[ $# -eq 0 ]]; then
+    _LESS=1
+fi
+
+while getopts "cleh" opt; do
+    case $opt in
+        c) _CAT=1 ;;
+        l) _LESS=1 ;;
+        e) _ESC=1 ;;
+        h) _HELP=1 ;;
+        *) echo -e "\033[31mE: Invalid flag\033[0m"; exit 1 ;;
+    esac
+done
+
+# 1. Show Help
+if [[ $_HELP -eq 1 ]]; then
+    echo -e "${BOLD}${CYAN}Usage:${RESET} $0 [options]"
+    echo "  -c    Write to terminal using 'cat'"
+    echo "  -l    View with 'less -R' (Interactive)"
+    echo "  -e    View with 'less -RX' (Keep on screen after exit)"
+    echo "  -h    Show this help menu"
+
+# 2. ESC Mode (less -RX)
+# -R: Show ANSI colors
+# -X: Do not clear the screen on exit
+elif [[ $_ESC -eq 1 ]]; then
+    echo -e "$CONTENT" | less -RX
+
+# 3. LESS Mode (less -R)
+elif [[ $_LESS -eq 1 ]]; then
+    echo -e "$CONTENT" | less -R
+
+# 4. CAT Mode
+elif [[ $_CAT -eq 1 ]]; then
+    printf "%b" "$CONTENT"
+fi

@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+# Detect the user who should get the configs
+TARGET_USER="${SUDO_USER:-$USER}"
+HOME_DIR=$(eval echo "~$TARGET_USER")
+
+echo "Installing Tilix and Zsh for $TARGET_USER..."
+
+# Detect package manager and install packages
+if command -v apt >/dev/null 2>&1; then
+    apt update
+    apt install -y tilix zsh unzip wget fonts-powerline
+elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y tilix zsh unzip wget
+elif command -v pacman >/dev/null 2>&1; then
+    pacman -Syu --noconfirm tilix zsh unzip wget
+else
+    echo "Unsupported package manager, aborting..."
+    exit 1
+fi
+
+# Change default shell for target user
+chsh -s "$(which zsh)" "$TARGET_USER"
+
+echo "Applying Zsh configuration..."
+
+# Backup existing zshrc if it exists
+if [ -f "$HOME_DIR/.zshrc" ]; then
+    mv "$HOME_DIR/.zshrc" "$HOME_DIR/.zshrc.bak"
+    echo "Existing zshrc backed up to $HOME_DIR/.zshrc.bak"
+fi
+
+# Copy new zshrc
+cp ./zshrc "$HOME_DIR/.zshrc"
+chown "$TARGET_USER":"$TARGET_USER" "$HOME_DIR/.zshrc"
+
+echo "Zsh configuration applied."
+
+# Check if JetBrainsMono Nerd Font is installed
+if ! fc-list : family | grep -qi "JetBrainsMono Nerd Font"; then
+    echo "Installing JetBrainsMono Nerd Font..."
+    FONT_TMP_DIR="/tmp/nerdfont-install"
+    mkdir -p "$FONT_TMP_DIR"
+    cd "$FONT_TMP_DIR" || exit
+
+    wget -q https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+    mkdir -p "$HOME_DIR/.local/share/fonts/JetBrainsMono"
+    unzip -qq JetBrainsMono.zip -d "$HOME_DIR/.local/share/fonts/JetBrainsMono"
+    chown -R "$TARGET_USER":"$TARGET_USER" "$HOME_DIR/.local/share/fonts/JetBrainsMono"
+
+    # Refresh font cache
+    sudo -u "$TARGET_USER" fc-cache -fv
+
+    # Cleanup
+    cd ~
+    rm -rf "$FONT_TMP_DIR"
+    echo "JetBrainsMono Nerd Font installed."
+fi
+
+echo "Applying Tilix settings..."
+
+# Load Tilix settings as the target user
+sudo -u "$TARGET_USER" dconf load /com/gexperts/Tilix/ < ./tilix.dconf
+
+echo "Tilix settings applied."
+
+echo "Installing htilix utility..."
+
+chmod +x ./htilix
+mv ./htilix /usr/local/bin/
+
+echo "htilix installed."
+
+echo "Setup complete! To start using Zsh, either open a new terminal or run:"
+echo "  exec zsh"
